@@ -1,0 +1,90 @@
+<html>
+
+    <head>
+        <title>Spag Test</title>
+    </head>
+
+    <body>
+        <h3 id="timer">--:--:--</h3>
+
+        <script type="text/javascript">
+            function startAircraft(onComplete, onError) {
+                try {
+                    //
+                    // Attempt sto start engines... 
+                    //
+                    throw new Error("Insufficient fuel.");
+                    console.debug("Engine started.");
+                    onComplete();
+                } catch (error) {
+                    onError(error);
+                }
+            }
+
+            function getTakeoffPermission() {
+                console.log("Call tower.");
+                console.log("Request takeoff permission.");
+            }
+
+            function callAircraftMechanic(problem) {
+                console.error("Could not start the aircraft, the problem is:" + problem);
+            }
+
+            startAircraft(getTakeoffPermission, callAircraftMechanic);
+
+        </script>
+
+        <script type="text/javascript">
+            var hours = 0,
+                minutes = 59,
+                seconds = 0;
+
+            var timerId = null;
+
+            function incrementTimer() {
+                seconds++;
+                if(seconds === 60) {
+                    minutes++;
+                    seconds = 0;
+                }
+
+                if(minutes === 60){
+                    hours++;
+                    minutes = 0;
+                }
+                document.getElementById("timer").innerText = `Timer: ${hours}:${minutes}:${seconds}`;
+
+                clearTimeout(timerId);
+                timerId = setTimeout(incrementTimer, 1000);
+                
+            }
+
+           incrementTimer();
+
+        </script>
+
+        <!-- =========================================================== -->
+
+        <script type="text/javascript">
+            tryConnection(connectionComplete,connectionError);
+            function tryConnection(connected,error){
+                try{
+                    throw new Error("You are offline.");
+                    connectionComplete();
+                }catch (problem){
+                    connectionError(problem);
+                }
+            }
+
+            function connectionComplete(){
+                console.log("Connection done successfully");
+            }
+
+            function connectionError(problem){
+                console.error("couldn't connect to the server, the error is:" + problem);
+            }
+
+        </script>
+        <script src="exam.js" ></script>
+    </body>
+</html>

@@ -1,0 +1,86 @@
+<html>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="style.css">
+        <script type="text/javascript" src="pg.js"></script>
+    </head>
+    <body>
+        <div id="navbar">
+            <div id="img-div">
+                <a href="home.html" id="logo"><img id="logo-img" src="IMG_7311.JPG"></a>
+            </div>
+            </br>
+            <div id="nvbr-right">    
+                <a class="active" href="home.html">Home</a>
+                <a href="Product.html">Products</a>
+                <a href="index.html">Insert Products</a>
+            </div>
+        </div>
+        
+        
+        
+        <div id="set-new-product-div">
+            <form id="set-new-product-form" name="insert-new-product-form" onsubmit="onProductSubmit();">
+                
+                <h2>Insert New Product</h2>
+                
+                <div id="product-name-div">
+                    <label>Product Name:</label>
+                    <input type="text" id="product-name" name="product-name">
+                </div>
+                
+            </br>
+            
+            <div id="product-type-div">
+                
+                    <label>Choose Product Type:</label>
+                    <select id="product-type-select" name="product-type" onchange="onTypeChange();">
+                        <option>None</option>
+                        <option value="Washing Machine" >Washing Machine</option>
+                        <option value="Hot Line">Hot Line</option>
+                        <option value="Cold Line">Cold Line</option>
+                        <option value="Bakery & Pastry">Bakery & Pastry</option>
+                        <option value="Laundry">Laundry</option>
+                        <option value="Preparation">Preparation</option>
+                        <option value="Coffee & bar Equipment">Coffee & Bar Equipment</option>
+                        <option value="buffet">Buffet</option>
+                        <option value="others">Others</option>
+                    </select>
+                </div>
+            </br>
+            <div id="product-sub-type-div">
+                <label>Choose Product Sub-Type:</label>
+                <select id="product-sub-type" name="product-sub-type">
+                    <option value="">None</option>
+                </select>
+            </div>
+        </br>
+                <div id="product-price-div">
+                    <label>Price:</label>
+                    <input type="number" id="product-buy-price" name="product-buy-price">
+                </div>            
+            </br>
+            <div id="condition-div">
+                <label>Condition:</label>
+                <select id="condition-selection" name="product-condition">
+                    <option>New</option>
+                    <option>Like New</option>
+                    <option>Used</option>
+                    <option>Need A Repair</option>
+                </select>
+            </div>
+        </br>
+                
+                <div id="describtion-div>">
+                    <label>Describtion:</label>
+                </br>
+                <textarea name="Describe the product detaails..." id="describtion-feild" name="describtion-field"></textarea>
+            </div>
+        </br>
+        <button type="submit" name="Submit" id="new-product-submit-btn">Submit</button>
+        <button type="reset" name="Reset" id="new-product-reset-btn">Reset</button>
+        
+    </form>
+</div>
+</body>
+</html>
