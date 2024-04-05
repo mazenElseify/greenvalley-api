@@ -4,6 +4,39 @@ using Npgsql;
 public class InvoiceManager 
 {
    const string CONN_STRING = "Host=localhost:5432;Username=postgres;Password=2511"; 
+   public int GenerateInvoiceCode(string direction)
+    {
+        NpgsqlConnection conn = new NpgsqlConnection(CONN_STRING);
+        try
+        {
+            conn.Open();
+            NpgsqlCommand cmd = conn.CreateCommand();
+            cmd.CommandText = @"select invoice_no from transaction where direction = @dir order by id desc limit 1";
+            cmd.Parameters.Add(new NpgsqlParameter("dir", NpgsqlTypes.NpgsqlDbType.Varchar)
+            {
+                Value = direction.ToUpper() ?? (object)DBNull.Value
+            });
+
+            // object val = cmd.ExecuteScalar();
+            // int lastInvoiceCode = 0;
+            // if (val != DBNull.Value)
+            //     lastInvoiceCode = (int)val;
+            int? lastInvoiceCode = cmd.ExecuteScalar() as int?;
+
+            return (lastInvoiceCode ?? 0) + 1;
+            //return (lastInvoiceCode == null ? 0 : 1) + 1;
+            // if (lastInvoiceCode == null)
+            //     return 1;
+            // else
+            //     return lastInvoiceCode.Value + 1;
+        }
+        finally
+        {
+            if (conn.State == ConnectionState.Open)
+                conn.Close();
+        }
+    }
+
     public static string CreateDisplayInvoiceCode(int? invoiceNo, string direction)
     {
         if (invoiceNo == null)
@@ -122,6 +155,120 @@ public class InvoiceManager
         Console.WriteLine("----------------------------------");
         Console.WriteLine($"Invoice Total Price: {InvoiceTotalPrice}");
         Console.WriteLine("----------------------------------");
+    }
+    public void CreateInvoice()
+    {
+        TransactionManager tm = new TransactionManager();
+        string input;
+        int ask;
+        string direct;
+        int count = 0;
+        bool terminate = false;
+        Console.Write("1- Transaction In.\n2- Transaction Out.\n'-1' cancel.\nPlease Choose transaction direction: ");
+        input = Console.ReadLine();
+        if (input == "-1")
+        {
+            Console.WriteLine("Proccess has been canceled.");
+            return;
+        }
+        if (!int.TryParse(input, out int direction))
+        {
+            Console.WriteLine("Invalid Direction, please try again.");
+
+            return;
+        }
+        else if (direction == 1)
+        {
+
+            direct = "IN";
+            int invoiceCode = GenerateInvoiceCode(direct);
+            int? supplierId = null;
+            SupplierManager sM = new SupplierManager();
+            sM.PrintSupplierList();
+            Console.Write("Select Supplier ID you want to make transaction with:\n'-1' to cancel: ");
+            input = Console.ReadLine();
+
+            if (input == "-1")
+            {
+                Console.WriteLine("Proccess has been canceled.");
+                return;
+            }
+            else if (!int.TryParse(input, out int sid))
+            {
+                Console.WriteLine("Invalid Supplier ID.");
+                return;
+            }
+            else if (!sM.CheckIfIdExists(sid))
+            {
+                Console.WriteLine("No Supplier found with the specified ID.");
+                return;
+            }
+            else
+                supplierId = sid;
+
+            // Ask user for supplier
+
+            do
+            {
+                tm.PromptUserForInsert(invoiceCode, direct, supplierId, null);
+                count++;
+                Console.WriteLine($"Transaction {count} Done Successfully.");
+                Console.WriteLine("Do you want to make another transaction:\n1- 'YES'\n2- 'NO'");
+                ask = int.Parse(Console.ReadLine());
+                if (ask == 2)
+                    terminate = true;
+                else
+                    terminate = false;
+            }
+            while (!terminate);
+            PrintInvoice(invoiceCode, direct);
+        }
+        else if (direction == 2)
+        {
+            direct = "OUT";
+            int invoiceCode = GenerateInvoiceCode(direct);
+            int? customerId = null;
+            CustomerManager cM = new CustomerManager();
+            cM.PrintCustomersList();
+            Console.Write("Select Customer ID you want to make transaction with:\n'-1' to cancel: ");
+            input = Console.ReadLine();
+
+            if (input == "-1")
+            {
+                Console.WriteLine("Proccess has been canceled.");
+                return;
+            }
+            else if (!int.TryParse(input, out int cid))
+            {
+                Console.WriteLine("Invalid customer ID.");
+                return;
+            }
+            else if (!cM.CheckIfIdExists(cid))
+            {
+                Console.WriteLine("No Customer found with the specified ID.");
+                return;
+            }
+            else
+                customerId = cid;
+
+            // ask user for customer
+
+            do
+            {
+                tm.PromptUserForInsert(invoiceCode, direct, null, customerId);
+                count++;
+                Console.WriteLine($"Transaction {count} Done Successfully.");
+                Console.WriteLine("Do you want to make another transaction:\n1- 'YES'\n2- 'NO'");
+                ask = int.Parse(Console.ReadLine());
+                if (ask == 2)
+                    terminate = true;
+                else
+                    terminate = false;
+            }
+            while (!terminate);
+            PrintInvoice(invoiceCode, direct);
+        }
+
     }
     
 }
