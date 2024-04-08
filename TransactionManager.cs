@@ -5,36 +5,40 @@ using Npgsql;
 public class TransactionManager
 {
     const string CONN_STRING = "Host=localhost:5432;Username=postgres;Password=2511";
-    public List<Transaction> GetTransactionsList(int? invoiceNo, string direction)
+    const int DEFAULT_INVENTORY_ID = 1;
+    public List<Transaction> GetTransactionsList(string invoiceCode, string direction)
     {
 
         NpgsqlConnection conn = new NpgsqlConnection(CONN_STRING);
         List<Transaction> transactions = new List<Transaction>();
         try
         {
-
-
             conn.Open();
             NpgsqlCommand cmd = conn.CreateCommand();
             cmd.CommandText = @"select 
                 t.*,
                 p.name as product_name,
                 c.name as customer_name,
-                s.name as supplier_name
+                s.name as supplier_name,
+                i.direction as direction,
+                i.customer_id,
+                i.supplier_id,
+                i.invoice_code
             from transaction t
+                left outer join invoice i on i.id = t.invoice_id
                 inner join product p on p.id = t.product_id
-                left outer join customer c on c.id = t.customer_id
-                left outer join supplier s on s.id = t.supplier_id
-            where (@invoice_no is null or @invoice_no = t.invoice_no)
+                left outer join customer c on c.id = i.customer_id
+                left outer join supplier s on s.id = i.supplier_id
+            where (@invoice_code is null or @invoice_code = i.invoice_code)
                 and (@direction is null or direction = @direction)";
 
             cmd.Parameters.Add(new NpgsqlParameter("direction", NpgsqlTypes.NpgsqlDbType.Varchar)
             {
                 Value = direction ?? (object)DBNull.Value
             });
-            cmd.Parameters.Add(new NpgsqlParameter("invoice_no", NpgsqlTypes.NpgsqlDbType.Integer)
+            cmd.Parameters.Add(new NpgsqlParameter("invoice_code", NpgsqlTypes.NpgsqlDbType.Varchar)
             {
-                Value = invoiceNo ?? (object)DBNull.Value
+                Value = invoiceCode ?? (object)DBNull.Value
             });
             NpgsqlDataReader r = cmd.ExecuteReader();
             while (r.HasRows && r.Read())
@@ -47,12 +51,13 @@ public class TransactionManager
                 transaction.Qty = r["qty"] as int?;
                 transaction.Price = r["unit_price"] as decimal?;
                 transaction.Direction = r["direction"] as string;
-                transaction.InvoiceNo = r["invoice_no"] as int?;
+                transaction.InvoiceId = r["invoice_id"] as int?;
                 transaction.CustomerId = r["customer_id"] as int?;
                 transaction.CustomerName = r["customer_name"] as string;
                 transaction.SupplierId = r["supplier_id"] as int?;
                 transaction.SupplierName = r["supplier_name"] as string;
                 transaction.InventoryId = r["inventory_id"] as int?;
+                transaction.InvoiceCode = r["invoice_code"] as string;
                 transactions.Add(transaction);
             }
             return transactions;
@@ -111,6 +116,7 @@ public class TransactionManager
     // }
     public void PrintAllTransactions()
     {
+        InvoiceManager im = new InvoiceManager();
         string[] headers = null;
         string[,] data = null;
         string direction = null;
@@ -150,7 +156,7 @@ public class TransactionManager
                 data[i, 3] = t.Price.ToString();
                 data[i, 4] = t.TotalPrice.ToString();
                 data[i, 5] = t.CustomerName;
-                data[i, 6] = t.InvoiceNoStr;
+                data[i, 6] = t.InvoiceCode ;
                 data[i, 7] = t.Date.Value.ToLocalTime().ToString();
             }
             Util.PrintTable(headers, data, 1, 16);
@@ -173,7 +179,7 @@ public class TransactionManager
                 data[i, 3] = t.Price.ToString();
                 data[i, 4] = t.TotalPrice.ToString();
                 data[i, 5] = t.SupplierName;
-                data[i, 6] = t.InvoiceNoStr;
+                data[i, 6] = t.InvoiceCode;
                 data[i, 7] = t.Date.Value.ToLocalTime().ToString();
 
             }
@@ -198,7 +204,7 @@ public class TransactionManager
                 data[i, 4] = t.Direction;
                 data[i, 5] = t.CustomerName;
                 data[i, 6] = t.SupplierName;
-                data[i, 7] = t.InvoiceNoStr;
+                data[i, 7] = t.InvoiceCode;
                 data[i, 8] = t.Date.Value.ToLocalTime().ToString();
                 // data[i,9] = t.InventoryId.ToString();
             }
@@ -219,8 +225,8 @@ public class TransactionManager
         {
             conn.Open();
             NpgsqlCommand cmd = conn.CreateCommand();
-            cmd.CommandText = @"insert into transaction (product_id,qty,unit_price,direction,supplier_id, customer_id,invoice_no,date,total_price)
-                values (@product_id,@qty,@price,@direction,@supplier_id, @customer_id,@invoice_no,@date,@total_price)";
+            cmd.CommandText = @"insert into transaction (invoice_id,product_id,qty,unit_price,date,total_price,inventory_id)
+                values (@invoice_id,@product_id,@qty,@price,@date,@total_price,@inventory_id)";
             cmd.Parameters.Add(new NpgsqlParameter("id", NpgsqlTypes.NpgsqlDbType.Integer)
             {
                 Value = t.Id ?? (object)DBNull.Value
@@ -249,9 +255,13 @@ public class TransactionManager
             {
                 Value = t.CustomerId ?? (object)DBNull.Value
             });
-            cmd.Parameters.Add(new NpgsqlParameter("invoice_no", NpgsqlTypes.NpgsqlDbType.Integer)
+            cmd.Parameters.Add(new NpgsqlParameter("invoice_id", NpgsqlTypes.NpgsqlDbType.Integer)
             {
-                Value = t.InvoiceNo ?? (object)DBNull.Value
+                Value = t.InvoiceId ?? (object)DBNull.Value
+            });
+            cmd.Parameters.Add(new NpgsqlParameter("inventory_id", NpgsqlTypes.NpgsqlDbType.Integer)
+            {
+                Value = t.InventoryId ?? (object)DBNull.Value
             });
             cmd.Parameters.Add(new NpgsqlParameter("date", NpgsqlTypes.NpgsqlDbType.Timestamp)
             {
@@ -272,24 +282,7 @@ public class TransactionManager
         }
     }
 
-    public static string CreateDisplayInvoiceCode(int? invoiceNo, string direction)
-    {
-        if (invoiceNo == null)
-            return null;
-
-        if (direction == "" || direction == null)
-            throw new InvalidOperationException("Invalid direction.");
-
-        string prefix = "I-";
-        if (direction == "OUT")
-            prefix = "O-";
-
-        // I-00000001
-        // I-00000010
-        return prefix + invoiceNo.ToString().PadLeft(7, '0');
-    }
-
-    public void PromptUserForInsert(int invoiceNo, string direction, int? supplierId, int? customerId)
+      public void PromptUserForInsert(int? invoiceId, string direction, int? supplierId, int? customerId)
     {
         string input;
         Transaction t = new Transaction();
@@ -302,6 +295,7 @@ public class TransactionManager
         t.Direction = direction;
         t.SupplierId = supplierId;
         t.CustomerId = customerId;
+        t.InventoryId = DEFAULT_INVENTORY_ID;
 
         if (t.Direction == "OUT")
         {
@@ -347,7 +341,7 @@ public class TransactionManager
 
             
 
-            t.InvoiceNo = invoiceNo;
+            t.InvoiceId = invoiceId;
 
             t.Date = DateTime.Now;
         }
@@ -395,7 +389,7 @@ public class TransactionManager
 
             
 
-            t.InvoiceNo = invoiceNo;
+            t.InvoiceId = invoiceId;
             t.Date = DateTime.Now;
         }
         InsertTransaction(t);
@@ -430,8 +424,6 @@ public class TransactionManager
             });
             cmd.ExecuteNonQuery();
             Console.WriteLine("Update has been Done Successfully.");
-
-
         }
         finally
         {
