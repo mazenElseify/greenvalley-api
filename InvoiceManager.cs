@@ -1,34 +1,46 @@
 using System.Data;
 using Npgsql;
+using NpgsqlTypes;
 
 public class InvoiceManager 
 {
    const string CONN_STRING = "Host=localhost:5432;Username=postgres;Password=2511"; 
-   public int GenerateInvoiceCode(string direction)
+   public string GenerateInvoiceCode(string direction)
     {
+        if (direction == "" || direction == null)
+            throw new InvalidOperationException("Invalid direction.");
+
         NpgsqlConnection conn = new NpgsqlConnection(CONN_STRING);
         try
         {
             conn.Open();
             NpgsqlCommand cmd = conn.CreateCommand();
-            cmd.CommandText = @"select invoice_no from transaction where direction = @dir order by id desc limit 1";
+            cmd.CommandText = @"select invoice_code from invoice where direction = @dir order by id desc limit 1";
             cmd.Parameters.Add(new NpgsqlParameter("dir", NpgsqlTypes.NpgsqlDbType.Varchar)
             {
                 Value = direction.ToUpper() ?? (object)DBNull.Value
             });
 
-            // object val = cmd.ExecuteScalar();
-            // int lastInvoiceCode = 0;
-            // if (val != DBNull.Value)
-            //     lastInvoiceCode = (int)val;
-            int? lastInvoiceCode = cmd.ExecuteScalar() as int?;
+            // Format: PREFIX-NUMBER
+            string lastInvoiceCode = cmd.ExecuteScalar() as string ?? "0";
 
-            return (lastInvoiceCode ?? 0) + 1;
-            //return (lastInvoiceCode == null ? 0 : 1) + 1;
-            // if (lastInvoiceCode == null)
-            //     return 1;
-            // else
-            //     return lastInvoiceCode.Value + 1;
+            List<char> digits = new List<char>();
+            foreach(char c in lastInvoiceCode)
+                if(char.IsDigit(c))
+                    digits.Add(c);
+
+            string digitsStr = new string(digits.ToArray());
+
+            int number = int.Parse(digitsStr);
+            number++;
+
+            string prefix = "I-";
+            if (direction == "OUT")
+                prefix = "O-";
+
+            // I-00000001
+            // I-00000010
+            return prefix + number.ToString().PadLeft(7, '0');
         }
         finally
         {
@@ -37,22 +49,6 @@ public class InvoiceManager
         }
     }
 
-    public static string CreateDisplayInvoiceCode(int? invoiceNo, string direction)
-    {
-        if (invoiceNo == null)
-            return null;
-
-        if (direction == "" || direction == null)
-            throw new InvalidOperationException("Invalid direction.");
-
-        string prefix = "I-";
-        if (direction == "OUT")
-            prefix = "O-";
-
-        // I-00000001
-        // I-00000010
-        return prefix + invoiceNo.ToString().PadLeft(7, '0');
-    }
     public Invoice GetInvoiceById(int? invoiceId)
     {
         NpgsqlConnection conn = new NpgsqlConnection(CONN_STRING);
@@ -62,16 +58,16 @@ public class InvoiceManager
             conn.Open();
             NpgsqlCommand cmd = conn.CreateCommand();
             cmd.CommandText = @"select 
-                t.invoice_no as invoice_no,
+                i.id,
                 c.name as customer_name,
                 s.name as supplier_name,
                 i.direction as direction,
                 i.date as date
             from transaction t
-                left outer join invoice i on i.id = t.invoice_no
+                left outer join invoice i on i.id = t.invoice_id
                 left outer join customer c on c.id = i.customer_id
                 left outer join supplier s on s.id = i.supplier_id
-            where (@id = t.invoice_no)";
+            where (@id = t.invoice_id)";
             cmd.Parameters.Add(new NpgsqlParameter("id", NpgsqlTypes.NpgsqlDbType.Integer)
             {
                 Value = invoiceId ?? (object)DBNull.Value
@@ -99,16 +95,19 @@ public class InvoiceManager
         }
 
     }
+    public List<Transaction> GetInvoiceLines(string invoiceCode, string direction)
+    {
+        return new TransactionManager().GetTransactionsList(invoiceCode, direction);
+    }
 
-     public void PrintInvoice(int? invoiceNo, string direction)
+     public void PrintInvoice(string invoiceCode, string direction)
     {
         decimal? InvoiceTotalPrice = 0;
         Console.WriteLine();
         Console.WriteLine("----------------------");
-        Console.WriteLine($"Invoice No: {CreateDisplayInvoiceCode(invoiceNo, direction)}");
+        Console.WriteLine($"Invoice No: {invoiceCode}");
         Console.WriteLine("----------------------");
-        TransactionManager tm = new TransactionManager();
-        List<Transaction> transactions = tm.GetTransactionsList(invoiceNo, direction);
+        List<Transaction> transactions = GetInvoiceLines(invoiceCode, direction);
         string[] headers = null;
         string[,] data = null;
 
@@ -146,7 +145,7 @@ public class InvoiceManager
                 data[i, 3] = t.Price.ToString();
                 data[i, 4] = t.TotalPrice.ToString();
                 data[i, 5] = t.SupplierName;
-                data[i, 7] = t.Date.Value.ToLocalTime().ToString();
+                data[i, 6] = t.Date.Value.ToLocalTime().ToString();
                 InvoiceTotalPrice += t.TotalPrice;
             }
            
@@ -156,9 +155,58 @@ public class InvoiceManager
         Console.WriteLine($"Invoice Total Price: {InvoiceTotalPrice}");
         Console.WriteLine("----------------------------------");
     }
+
+    public int? InsertInvoice(Invoice i)
+    {
+        NpgsqlConnection conn = new NpgsqlConnection(CONN_STRING);
+        try
+        {
+            conn.Open();
+            NpgsqlCommand cmd = conn.CreateCommand();
+            cmd.CommandText = @"insert into invoice (supplier_id,customer_id,direction,date,invoice_code)
+                values (@supplier_id,@customer_id,@direction,@date,@invoice_code) returning id";
+            cmd.Parameters.Add(new NpgsqlParameter("supplier_id", NpgsqlTypes.NpgsqlDbType.Integer)
+            {
+                Value = i.SupplierId ?? (object)DBNull.Value
+            });
+            cmd.Parameters.Add(new NpgsqlParameter("customer_id",NpgsqlTypes.NpgsqlDbType.Integer)
+            {
+                Value = i.CustomerId ?? (object)DBNull.Value
+            });
+            cmd.Parameters.Add(new NpgsqlParameter("direction", NpgsqlTypes.NpgsqlDbType.Varchar)
+            {
+                Value = i.Direction ?? (object)DBNull.Value
+            });
+            cmd.Parameters.Add(new NpgsqlParameter("date" ,NpgsqlTypes.NpgsqlDbType.Timestamp)
+            {
+                Value = i.Date ?? (object)DBNull.Value
+            });
+            cmd.Parameters.Add(new NpgsqlParameter("invoice_code",NpgsqlTypes.NpgsqlDbType.Varchar)
+            {
+                Value = i.InvoiceCode ?? (object)DBNull.Value
+            });
+            return cmd.ExecuteScalar() as int?;
+
+            // cmd.Parameters.Clear();
+            // cmd.Parameters.Add(new NpgsqlParameter("invoice_code",NpgsqlTypes.NpgsqlDbType.Varchar)
+            // {
+            //     Value = i.InvoiceCode ?? (object)DBNull.Value
+            // });
+            // cmd.CommandText = "select id from invoice where invoice_code=@invoice_code";
+            // return cmd.ExecuteScalar() as int?;
+
+        }
+        finally
+        {
+            if (conn.State == ConnectionState.Open)
+                conn.Close();
+        }
+    }
+
     public void CreateInvoice()
     {
         TransactionManager tm = new TransactionManager();
+        Invoice i = new Invoice();
         string input;
         int ask;
         string direct;
@@ -171,17 +219,17 @@ public class InvoiceManager
             Console.WriteLine("Proccess has been canceled.");
             return;
         }
-        if (!int.TryParse(input, out int direction))
+        if (!int.TryParse(input, out int directionInput))
         {
             Console.WriteLine("Invalid Direction, please try again.");
 
             return;
         }
-        else if (direction == 1)
+        else if (directionInput == 1)
         {
 
             direct = "IN";
-            int invoiceCode = GenerateInvoiceCode(direct);
+            string invoiceCode = GenerateInvoiceCode(direct);
             int? supplierId = null;
             SupplierManager sM = new SupplierManager();
             sM.PrintSupplierList();
@@ -207,10 +255,17 @@ public class InvoiceManager
                 supplierId = sid;
 
             // Ask user for supplier
+            
+            i.SupplierId = supplierId;
+            i.Direction = direct;
+            // i.Id = invoiceCode;
+            i.InvoiceCode = invoiceCode;
+            i.Date = DateTime.Now;
+            int? invoiceId = InsertInvoice(i);
 
             do
             {
-                tm.PromptUserForInsert(invoiceCode, direct, supplierId, null);
+                tm.PromptUserForInsert(invoiceId, direct, supplierId, null);
                 count++;
                 Console.WriteLine($"Transaction {count} Done Successfully.");
                 Console.WriteLine("Do you want to make another transaction:\n1- 'YES'\n2- 'NO'");
@@ -223,10 +278,10 @@ public class InvoiceManager
             while (!terminate);
             PrintInvoice(invoiceCode, direct);
         }
-        else if (direction == 2)
+        else if (directionInput == 2)
         {
             direct = "OUT";
-            int invoiceCode = GenerateInvoiceCode(direct);
+            string invoiceCode = GenerateInvoiceCode(direct);
             int? customerId = null;
             CustomerManager cM = new CustomerManager();
             cM.PrintCustomersList();
@@ -251,11 +306,16 @@ public class InvoiceManager
             else
                 customerId = cid;
 
-            // ask user for customer
+            i.CustomerId = customerId;
+            i.Direction = direct;
+            i.InvoiceCode = invoiceCode;
+            
+            i.Date = DateTime.Now;
+            int? invoiceId = InsertInvoice(i);
 
             do
             {
-                tm.PromptUserForInsert(invoiceCode, direct, null, customerId);
+                tm.PromptUserForInsert(invoiceId, direct, null, customerId);
                 count++;
                 Console.WriteLine($"Transaction {count} Done Successfully.");
                 Console.WriteLine("Do you want to make another transaction:\n1- 'YES'\n2- 'NO'");
