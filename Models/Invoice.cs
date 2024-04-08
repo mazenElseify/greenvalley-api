@@ -5,7 +5,7 @@ using System.Dynamic;
 public class Invoice
 {
     public int? Id {get; set;}
-    public int? InvoiceNo {get; set;}
+    public string InvoiceCode {get; set;}
     public int? SupplierId {get; set;}
     public string SupplierName {get; set;}
     public string CustomerName{set; get;}

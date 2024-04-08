@@ -10,15 +10,9 @@ public class Transaction
     public int? Qty { get; set; }
     public decimal? Price { get; set; }
     public string Direction { get; set; }
-    public int? InvoiceNo { get; set; }
+    public int? InvoiceId { get; set; }
 
-    public string InvoiceNoStr
-    {
-        get
-        {
-            return TransactionManager.CreateDisplayInvoiceCode(InvoiceNo, Direction);
-        }
-    }
+    public string InvoiceCode{get; set;}
 
     public int? CustomerId { get; set; }
     public string CustomerName { get; set; }
