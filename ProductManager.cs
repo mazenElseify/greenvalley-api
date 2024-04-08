@@ -212,7 +212,7 @@ public class ProductManager
         }
 
     }
-    public bool CheckIfTypeExists(int pTypeId)
+    public bool CheckIfTypeExists(int? pTypeId)
     {
         NpgsqlConnection conn = new NpgsqlConnection(CONN_STRING);
         try
@@ -234,7 +234,7 @@ public class ProductManager
         }
     }
 
-    public bool CheckIfSubTypeExists(int subtypeId)
+    public bool CheckIfSubTypeExists(int? subtypeId)
     {
         NpgsqlConnection conn = new NpgsqlConnection(CONN_STRING);
         try
@@ -1106,14 +1106,27 @@ public class ProductManager
         Console.WriteLine("Product Type has been deleted successfully.");
 
     }
-    public void InsertNewSubType(int typeId)
+    public void InsertNewSubType(int? typeId, string subTypeName)
     {
         NpgsqlConnection conn = new NpgsqlConnection(CONN_STRING);
+        
+
         try
         {
             conn.Open();
             NpgsqlCommand cmd = conn.CreateCommand();
-            cmd.CommandText = @"insert into product_sub_type (name) values (@name) where id =@id";
+            cmd.CommandText = @"insert into product_sub_type (name) values (@name) where type_id =@tid ";
+            cmd.Parameters.Add(new NpgsqlParameter("tid", NpgsqlTypes.NpgsqlDbType.Integer)
+            {
+                Value = typeId ?? (object)DBNull.Value
+            });
+            cmd.Parameters.Add(new NpgsqlParameter("name",NpgsqlTypes.NpgsqlDbType.Varchar)
+            {
+                Value = subTypeName ?? (object)DBNull.Value
+            });
+            cmd.ExecuteNonQuery();
+            Console.WriteLine("Insertion has been done successfully.");
+
 
 
         }
@@ -1127,16 +1140,53 @@ public class ProductManager
     }
     public void PromptUserForInsertSubType()
     {
+        int typeId;
+        string subTypeName;
+        Console.WriteLine("---------------------------");
+        Console.WriteLine("Insert new Product SubType.");
+        Console.WriteLine("---------------------------");
+
+        PrintTypeList();
+        Console.Write("Please select SubType:\n'-1' to cancel: ");
+        typeId = int.Parse(Console.ReadLine());
+        if(typeId == -1)
+        {
+            Console.WriteLine("Proccess has been canceled.");
+            return;
+        }
+
+        else if (!CheckIfTypeExists(typeId))
+        {
+            Console.WriteLine("Invalid Input, Subtype id cannot be found.");
+            return;
+        }
+        else
+            Console.Write("Please enter the name of Product SubType: ");
+        subTypeName = Console.ReadLine();
+
+        InsertNewSubType(typeId, subTypeName);
+
 
     }
-    public void UpdateSubType()
+    public void UpdateSubType(string subTypeName, int? id)
     {
         NpgsqlConnection conn = new NpgsqlConnection(CONN_STRING);
         try
         {
             conn.Open();
             NpgsqlCommand cmd = conn.CreateCommand();
-            cmd.CommandText = @"";
+            cmd.CommandText = @"update product_sub_type set name = @name where id = @id";
+            cmd.Parameters.Add(new NpgsqlParameter("id", NpgsqlTypes.NpgsqlDbType.Integer)
+            {
+                Value = id ?? (object)DBNull.Value
+            });
+            cmd.Parameters.Add(new NpgsqlParameter("name", NpgsqlTypes.NpgsqlDbType.Varchar)
+            {
+                Value = subTypeName ?? (object)DBNull.Value
+            });
+            cmd.ExecuteNonQuery();
+            Console.WriteLine("Update has been done successfuly.");
+            
 
         }
         finally
@@ -1149,7 +1199,45 @@ public class ProductManager
     }
     public void PropmtUserForUpdateSubType()
     {
+        int? input;
+        string subTypeName;
+        Console.WriteLine("--------------------");
+        Console.WriteLine("Update SubType Name:");
+        Console.WriteLine("--------------------");
+        
+        PrintTypeList();
+        Console.WriteLine("Please select type ID:\n'-1' to cancel the proccess:");
+        input = int.Parse(Console.ReadLine());
+        if (input == -1)
+        {
+            Console.WriteLine("Proccess has been canceled.");
+            return;
+        }
+        else if (!CheckIfTypeExists(input))
+        {
+            Console.WriteLine("Invalid input, ID cannot be found.");
+            return;
+        }
+        else
+            PrintSubTypeList(input);
+            Console.Write("Select product SubType you wish to Update:\'-1' to cancel: ");
+            input = int.Parse(Console.ReadLine());
+            if (input == -1)
+            {
+                Console.WriteLine("Proccess has been canceled.");
+                return;
+            }
+            else if (!CheckIfSubTypeExists(input))
+            {
+                Console.WriteLine("Invalid input, SubType ID not found.");
+                return;
+            }
+            else
+                Console.WriteLine($"Please enter the name of Subtype {input}");
+            subTypeName = Console.ReadLine();
 
+            UpdateSubType(subTypeName,input);    
+        
     }
 
     public void DeleteSubType(int subTypeId)
