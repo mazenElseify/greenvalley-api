@@ -162,53 +162,36 @@ public class SupplierManager
     {
         Supplier supplier = new Supplier();
 
-        string input;
+        int? input;
+        // string inputStr;
 
+        Console.WriteLine("--------------------");
         Console.WriteLine("Insert new Supplier:");
         Console.WriteLine("--------------------");
 
         // Input Name:
-        Console.WriteLine("Enter Supplier Name: \n -1 to cancel: ");
-        input = Console.ReadLine();
-        if (input == "-1")
-        {
-            ShowMenu();
+        supplier.Name = Util.GetInput("Enter Supplier Name: ", "-1", (val) => val != null);
+        if (supplier.Name == null)
             return;
-        }
-        else
-            supplier.Name = input;
 
-        // input International status:
-
-        Console.Write("1. International.\n0. local.\n-1. cancel.\nSelect option:");
-        input = Console.ReadLine();
-        if (input == "-1")
-        {
-            ShowMenu();
+        input = Util.GetInput<int>("0. International\n1. Local\n Select Supplier Nationallity: ", "-1", (val) => val < 2 && val >= 0);
+        if (input == null)
             return;
-        }
-        else if (input == "1")
+        
+        if (input == 1)
         {
             supplier.International = true;
         }
-        else if (input == "0")
+        else if (input == 0)
         {
             supplier.International = false;
-
         }
-        else
-        {
-            Console.WriteLine("Invalid input.");
+        
+        supplier.Phone = Util.GetInput("Enter Supplier Phone number: ", "-1", (val) => val.Length <= 15);
+        if (supplier.Phone == null)
             return;
-        }
-
-        Console.WriteLine("Enter supplier phone number:\n-1 to cancel.");
-        input = Console.ReadLine();
-        supplier.Phone = input;
-
-        Console.WriteLine("Enter Supplier Email:\n-1 to cancel.:");
-        input = Console.ReadLine();
-        supplier.Email = input;
+        
+        supplier.Email = Util.GetInput("Enter Supplier Email: ", "-1", null);
 
         InsertNewSupplier(supplier);
         Console.WriteLine("Supplier has been inserted successfully.");
@@ -287,13 +270,13 @@ public class SupplierManager
         PrintSupplierById(supplier.Id);
         Console.WriteLine("Enter new name:\nEnter 'NA' to keep the original:\n -1 to cancel.");
         input = Console.ReadLine();
-        if (input.ToUpper() == "NA")
-            supplier.Name = s.Name;
-        else if (input == "-1")
+        
+        if (input == "-1")
         {
-            ShowMenu();
             return;
         }
+        else if (input.ToUpper() == "NA")
+            supplier.Name = s.Name;
         else
             supplier.Name = input;
 
@@ -301,7 +284,6 @@ public class SupplierManager
         input = Console.ReadLine();
         if (input == "-1")
         {
-            ShowMenu();
             return;
         }
         else if (input.ToUpper() == "NA")
@@ -316,7 +298,6 @@ public class SupplierManager
         input = Console.ReadLine();
         if (input == "-1")
         {
-            ShowMenu();
             return;
         }
         else if (input.ToUpper() == "NA")
