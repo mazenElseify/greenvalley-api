@@ -5,7 +5,6 @@ using Npgsql;
 public class TransactionManager
 {
     const string CONN_STRING = "Host=localhost:5432;Username=postgres;Password=2511";
-    const int DEFAULT_INVENTORY_ID = 1;
     public List<Transaction> GetTransactionsList(string invoiceCode, string direction)
     {
 
@@ -225,8 +224,8 @@ public class TransactionManager
         {
             conn.Open();
             NpgsqlCommand cmd = conn.CreateCommand();
-            cmd.CommandText = @"insert into transaction (invoice_id,product_id,qty,unit_price,date,total_price,inventory_id)
-                values (@invoice_id,@product_id,@qty,@price,@date,@total_price,@inventory_id)";
+            cmd.CommandText = @"insert into transaction (invoice_id,product_id,qty,unit_price,date,inventory_id)
+                values (@invoice_id,@product_id,@qty,@price,@date,@inventory_id)";
             cmd.Parameters.Add(new NpgsqlParameter("id", NpgsqlTypes.NpgsqlDbType.Integer)
             {
                 Value = t.Id ?? (object)DBNull.Value
@@ -267,10 +266,10 @@ public class TransactionManager
             {
                 Value = t.Date ?? (object)DBNull.Value
             });
-            cmd.Parameters.Add(new NpgsqlParameter("total_price", NpgsqlTypes.NpgsqlDbType.Money)
-            {
-                Value = t.TotalPrice ?? (object)DBNull.Value
-            });
+            // cmd.Parameters.Add(new NpgsqlParameter("total_price", NpgsqlTypes.NpgsqlDbType.Money)
+            // {
+            //     Value = t.TotalPrice ?? (object)DBNull.Value
+            // });
             cmd.ExecuteNonQuery();
         }
         finally
@@ -284,7 +283,7 @@ public class TransactionManager
 
       public void PromptUserForInsert(int? invoiceId, string direction, int? supplierId, int? customerId)
     {
-        string input;
+        // string input;
         Transaction t = new Transaction();
         ProductManager pM = new ProductManager();
         CustomerManager cM = new CustomerManager();
@@ -295,51 +294,30 @@ public class TransactionManager
         t.Direction = direction;
         t.SupplierId = supplierId;
         t.CustomerId = customerId;
-        t.InventoryId = DEFAULT_INVENTORY_ID;
+        t.InventoryId = InventoryManager.DEFAULT_INVENTORY_ID;
 
         if (t.Direction == "OUT")
         {
-            pM.PrintProductsInList();
-            Console.WriteLine("Select Product ID you want to make transaction on:\n'-1' to cancel. ");
-            input = Console.ReadLine();
-            if (input == "-1")
-            {
-                Console.WriteLine("Operation has been canceled.");
-                return;
-            }
-            else if (!pM.CheckIfIdExists(input.ToUpper()))
-            {
-                Console.WriteLine("Invalid ID, Please choose a valid ID:\n'-1' to cancel.");
-                return;
-            }
-            else
-                t.ProductId = input.ToUpper();
-
-            Console.Write("Select transaction Quantity: ");
-            input = Console.ReadLine();
-            if (!int.TryParse(input, out int qty))
-            {
-                Console.WriteLine("Invalid Input, you should enter Number.");
-            }
-            else
-                t.Qty = qty;
-
-            Console.WriteLine("Enter Product Unit Price:\n'-1' to cancel");
-            input = Console.ReadLine();
-            if (input == "-1")
-            {
-                Console.WriteLine("Proccess has been canceled.");
-                return;
-            }
-            else if (!int.TryParse(input, out int price))
-            {
-                Console.WriteLine("Invalid Price.");
-                return;
-            }
-            else
-                t.Price = price;
-
+            Console.WriteLine("----------------");
+            Console.WriteLine("Out Transaction:");
+            Console.WriteLine("----------------");
             
+            pM.PrintProductsInList();
+            t.ProductId = Util.GetInput("Select Product ID: ", "-1",(val) => pM.CheckIfIdExists(val.ToUpper())).ToUpper();
+            if (t.ProductId == null)
+                return;            
+
+            var mgr = new InventoryManager();
+            var availableStock = mgr.GetAvailableStock(t.ProductId);
+
+            Console.WriteLine("Available stock: " + availableStock);
+            t.Qty = Util.GetInput<int>("Enter quantity: ", "-1", (val) => val > 0 && val <= availableStock);
+            if(t.Qty == null)
+                return;
+            t.Price = Util.GetInput<decimal>("Enter Product Price: ", "-1", (val) => val > 0);
+            if (t.Price == null)
+                return;
+                        
 
             t.InvoiceId = invoiceId;
 
@@ -347,52 +325,28 @@ public class TransactionManager
         }
         else
         {
+            Console.WriteLine("----------------");
+            Console.WriteLine("In Transaction:");
+            Console.WriteLine("----------------");
             pM.PrintProductsInList();
-            Console.WriteLine("Select Product ID you want to make transaction on:\n'-1' to cancel. ");
-            input = Console.ReadLine();
-            if (input == "-1")
-            {
-                Console.WriteLine("Operation has been canceled.");
+            t.ProductId = Util.GetInput("Select Product ID: " , "-1", (val) => pM.CheckIfIdExists(val.ToUpper())).ToUpper();
+            if (t.ProductId == null)
                 return;
-            }
-            else if (!pM.CheckIfIdExists(input.ToUpper()))
-            {
-                Console.WriteLine("Invalid ID, Please choose a valid ID:\n'-1' to cancel.");
-                return;
-            }
-            else
-                t.ProductId = input.ToUpper();
 
-            Console.Write("Select transaction Quantity: ");
-            input = Console.ReadLine();
-            if (!int.TryParse(input, out int qty))
-            {
-                Console.WriteLine("Invalid Input, you should enter Number.");
-            }
-            else
-                t.Qty = qty;
-
-            Console.WriteLine("Enter Transaction Price:\n'-1' to cancel");
-            input = Console.ReadLine();
-            if (input == "-1")
-            {
-                Console.WriteLine("Proccess has been canceled.");
+            t.Qty = Util.GetInput<int>("Enter quantity: ", "-1", (val) => val > 0);
+            if(t.Qty == null)
                 return;
-            }
-            else if (!int.TryParse(input, out int price))
-            {
-                Console.WriteLine("Invalid Price.");
-                return;
-            }
-            else
-                t.Price = price;
-
             
+            t.Price = Util.GetInput<decimal>("Enter Product Price: ", "-1", (val) => val > 0);
+            if (t.Price == null)
+                return;
 
             t.InvoiceId = invoiceId;
             t.Date = DateTime.Now;
         }
         InsertTransaction(t);
+
+        Console.WriteLine($"Transaction Done Successfully.");
 
 
 
@@ -436,46 +390,28 @@ public class TransactionManager
     public void PromptUserForUpdate()
     {
         Transaction t = new Transaction();
+        Console.WriteLine("-------------------");
         Console.WriteLine("Update Transaction:");
         Console.WriteLine("-------------------");
-        int input;
+ 
+
         PrintAllTransactions();
-        Console.Write("Select Transaction ID you want to Update:\n'-1' To Cancel: ");
-        input = int.Parse(Console.ReadLine());
-        if (input == -1)
-        {
+        t.Id = Util.GetInput<int>("Select Transaction ID: ", "-1", (val) => CheckIfTransactionExisits(val));
+        if (t.Id == null)
             return;
-        }
-        else if (!CheckIfTransactionExisits(input))
-        {
-            Console.WriteLine("Invalid Input, The ID you specified is not found, Please Try Again.");
-            PromptUserForUpdate();
+        
+        t.Price = Util.GetInput<decimal>("Enter the new Price: ", "-1", (val) => val > 0);
+        if (t.Price == null)
             return;
-        }
-        else
-            t.Id = input;
 
-        Console.Write("Enter The Updated Price:\n'-1' To Cancel: ");
-        input = int.Parse(Console.ReadLine());
-        if (input == -1)
-        {
-            Console.WriteLine("Proccess has been canceled.");
+        t.Qty = Util.GetInput<int>("Enter Quantity: ", "-1", (val) => val > 0);
+        if (t.Qty == null)
             return;
-        }
-        else
-            t.Price = input;
-
-        Console.Write("Enter Quantity:\n'-1' To Cancel: ");
-        input = int.Parse(Console.ReadLine());
-        if (input == -1)
-        {
-            Console.WriteLine("Proccess has been canceled.");
-            return;
-        }
-        else
-            t.Qty = input;
-
+        
+        
         UpdateTransaction(t);
+        InvoiceManager im = new InvoiceManager();
+        im.UpdateInvoice(t.Id);
 
     }
     public void DeleteTransaction(int? id)
