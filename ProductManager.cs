@@ -9,6 +9,7 @@ using System.Reflection.Metadata.Ecma335;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
+using System.Transactions;
 using System.Xml.XPath;
 using Microsoft.VisualBasic;
 using Npgsql;
@@ -456,65 +457,38 @@ public class ProductManager
     {
         Product p = new Product();
 
-        Console.WriteLine(@"Enter product name:
-            Press -2 to cancel the process.");
+        Console.WriteLine("-------------------");
+        Console.WriteLine("Insert New Product:");
+        Console.WriteLine("-------------------");
 
-        p.Name = Console.ReadLine();
-        if (p.Name == "-2")
-            ShowMenu();
+        p.Name = Util.GetInput("Enter Product Name: ", "-1", (val) => val != null);
+        if(p.Name == null)
+            return;
 
         PrintTypeList();
-        Console.Write("Select Product Type by ID or enter -2 to return to Menu: ");
-        p.TypeId = int.Parse(Console.ReadLine());
-        Console.WriteLine();
-
-        if (p.TypeId == -2)
-            ShowMenu();
-
-        else if (!CheckIfTypeExists((int)p.TypeId))
-        {
-            Console.WriteLine("Invalid type.");
+        p.TypeId = Util.GetInput<int>("Select Type by ID: ", "-1", (val) => CheckIfTypeExists(val));
+        if (p.TypeId == null)
             return;
-        }
-        else
-            PrintSubTypeList(p.TypeId);
-
-
-        Console.Write("Select Product Sub type by ID or enter -2 to return to Menu: ");
-        p.SubTypeId = int.Parse(Console.ReadLine());
-        Console.WriteLine();
-
-        if (p.SubTypeId == -2)
-            ShowMenu();
-
-        else if (!CheckIfSubTypeExists((int)p.SubTypeId))
-        {
-            Console.WriteLine("Invalid sub type.");
+        
+        PrintSubTypeList(p.TypeId);
+        p.SubTypeId = Util.GetInput<int>("Select SubType by ID: ", "-1", (val) => CheckIfSubTypeExists(val));
+        if (p.SubTypeId == null)
             return;
-        }
-        else
-            Console.Write(@"Set Buy Price or enter -2 to return to Menu: ");
-        p.BuyPrice = decimal.Parse(Console.ReadLine());
-        Console.WriteLine();
-        if (p.BuyPrice == -2)
-            ShowMenu();
 
-        Console.Write("Set Sell Price or enter -2 to return to Menu: ");
-        p.SellPrice = decimal.Parse(Console.ReadLine());
-        Console.WriteLine();
-        if (p.SellPrice == -2)
-            ShowMenu();
-
-
-        Console.Write("0. New\n1. Used\n2. Like New\n3.Need repair\nor enter -2 to return to Menu:");
-        p.Condition = int.Parse(Console.ReadLine());
-        if (p.Condition == -2)
-            ShowMenu();
-
-        Console.Write("Describe product condition or enter -2 to return to Menu: ");
-        p.Description = Console.ReadLine();
-        if (p.Description == "-2")
-            ShowMenu();
+        p.BuyPrice = Util.GetInput<decimal>("Set Buy Price: ", "-1", (val) => val > 0);
+        if (p.BuyPrice == null)
+            return;    
+        
+        p.SellPrice = Util.GetInput<decimal>("Set Sell Price: ", "-1", (val) => val > 0);
+        if (p.SellPrice == null)
+            return;            
+        p.Condition = Util.GetInput<int>("0. New\n1. Used\n2. Like New\n3. Need Repair\nSelect Condition: ","-1",(val) => val >= 0 && val < 4);
+        if (p.Condition == null)
+            return;
+        
+        p.Description = Util.GetInput("Describe Product Condition: ", "-1", (val) => val.Length < 100);
+        if (p.Description == null)
+            return;
 
         p.TypeName = GetTypeName(p.TypeId);
         p.SubTypeName = GetSubTypeName(p.SubTypeId);
@@ -523,8 +497,17 @@ public class ProductManager
         int cnt = GetProductCount(p.TypeId, p.SubTypeId);
 
         p.Id = CreateCode(p.TypeName) + "-" + CreateCode(p.SubTypeName) + "-" + (cnt + 1);
-
+       
+        // int? activeState = Util.GetInput<int>("Product State:\n1. Active\n2. InAvtive", "-1", (val) => val > 1 && val < 3); // depends on the stock
+        // if (activeState == null)
+        //     return;
+        // else if (activeState == 1)
+        //     p.Active = true;
+        // else if (activeState == 2)
+        //     p.Active = false;
+        
         p.Active = true;
+        
 
         InsertProduct(p);
 
@@ -604,10 +587,9 @@ public class ProductManager
         Console.WriteLine("Update Product: ");
 
         PrintTypeList();
-        Console.Write("Select product type ID: ");
-        int typeId = int.Parse(Console.ReadLine());
-
-
+        int? typeId = Util.GetInput<int>("Select Pruduct type ID:" ,"-1",(val) => CheckIfTypeExists(val));
+        if (typeId == null)
+            return;        
 
         List<Product> products = GetAllProducts(typeId);
 
@@ -625,15 +607,11 @@ public class ProductManager
             Util.PrintTable(headers, d2, 3);
 
         }
-
-        Console.Write("Enter ID of the product you wish to update: ");
-        string productId = Console.ReadLine().ToUpper();
-
-        if (!PrintProductById(productId))
-        {
-            Console.WriteLine($"Product with the specified ID '{productId}' cannot be found.");
-            return;
-        }
+        string productId = "";
+        productId = Util.GetInput("Enter Product ID to Update: ", "-1", (val) => CheckIfIdExists(val.ToUpper()));
+        PrintProductById(productId);
+        if (productId == null)
+            return;        
 
         Product p = null;
         foreach (Product p2 in products)
@@ -655,28 +633,36 @@ public class ProductManager
         input = Console.ReadLine();
         if (input.ToUpper() != "NA")
             p.Name = input;
-        // if ((input) == NA)
-        // (var) = original
+        else
+            p.Name = p.Name;
 
         Console.Write("Enter buy Price or enter NA to keep original: ");
         input = Console.ReadLine();
         if (input.ToUpper() != "NA")
-            p.BuyPrice = int.Parse(input);
-
+            p.BuyPrice = decimal.Parse(input);
+        else 
+            p.BuyPrice = p.BuyPrice;
+        
         Console.Write("Enter sell Price or enter NA to keep original: ");
         input = Console.ReadLine();
         if (input.ToUpper() != "NA")
-            p.SellPrice = int.Parse(input);
-
+            p.SellPrice = decimal.Parse(input);
+        else    
+            p.SellPrice = p.SellPrice;
+    
         Console.Write("0. New\n1. Used\n2. Like New\n3.Need repair\n");
         input = Console.ReadLine();
         if (input.ToUpper() != "NA")
             p.Condition = int.Parse(input);
+        else 
+            p.Condition = p.Condition;
 
         Console.Write("Describe product condition or enter NA to keep original: ");
         input = Console.ReadLine();
         if (input != "NA")
             p.Description = input;
+        else
+            p.Description = p.Description;
         // if ((input) == NA)
         // (var) = original
         // 
@@ -778,7 +764,7 @@ public class ProductManager
         }
 
         // Console.WriteLine("_________________________________________________________________________________________________");
-        string[] headers = { "ID", "Name", "Type", "Price" };
+        string[] headers = { "PPODUCT ID", "Name", "Type", "Price" };
         Util.PrintTable(headers, data, 3);
 
     }
@@ -829,7 +815,7 @@ public class ProductManager
                     {"NAME:",       p.Name},
                     {"TYPE:",       p.TypeName },
                     {"SUB TYPE:",   p.SubTypeName},
-                    {"PRICE:", p.SubTypeName},
+                    {"PRICE:", p.SellPrice.ToString()},
                     {"CONDITION:",  p.ConditionStr},
                     {"DESCRIPTION:", p.Description}
                 };
@@ -903,6 +889,11 @@ public class ProductManager
                             readInput = Console.ReadLine().ToUpper();
                             // check if id found create function.
                             manager.PrintProductById(readInput);
+                            
+                            Console.Write("Press enter to return to menu: ");
+                            readInput = Console.ReadLine();
+                            if (readInput == "")
+                                return;
                             break;
 
                     }
