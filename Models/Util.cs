@@ -1,6 +1,8 @@
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Dynamic;
 using System.Net.Http.Headers;
+using System.Reflection.Metadata.Ecma335;
 using System.Runtime.InteropServices.Marshalling;
 
 public static class Util
@@ -158,5 +160,69 @@ public static class Util
     internal static T[,] ToMatrix<T>(List<Customer> customers)
     {
         throw new NotImplementedException();
+    }
+
+    public static T? GetInput<T>(string message, string terminator, Func<T, bool> validate) where T: struct
+    {
+        string input = null;
+
+        Type typeInfo = typeof(T);
+        var converter = TypeDescriptor.GetConverter(typeInfo);
+
+        int tryCount = 0;
+
+        while(true)
+        {
+            if(tryCount > 0)
+                Console.WriteLine("Invalid Input.\n");
+
+            tryCount++;
+
+            Console.Write(message);
+            if(terminator != null)
+                Console.Write($" (or enter {terminator} to cancel)\n\t");
+
+            input = Console.ReadLine();
+
+            if(input == terminator)
+                break;
+
+            if(converter.IsValid(input))
+            {
+                T val = (T)converter.ConvertFromString(input);
+                if(validate(val))
+                    return val;
+            }
+        }
+
+        return null;
+    }
+
+    public static string GetInput(string message, string terminator, Func<string, bool> validate)
+    {
+        string input = null;
+        int tryCount = 0;
+
+        while(true)
+        {
+            if(tryCount > 0)
+                Console.WriteLine("Invalid value.\n");
+
+            tryCount++;
+
+            Console.Write(message);
+            if(terminator != null)
+                Console.Write($" (or enter '{terminator}' to cancel)\n\t ");
+
+            input = Console.ReadLine();
+
+            if(input == terminator)
+                break;
+
+            if(validate(input))
+                return input;
+        }
+
+        return null;
     }
 }
