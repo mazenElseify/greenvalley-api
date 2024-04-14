@@ -202,30 +202,70 @@ public class InvoiceManager
                 conn.Close();
         }
     }
+    public void UpdateInvoice(int? transactionId)
+    {
+        decimal? totalPrice = 0;
+        int? invoiceId = null;
+        NpgsqlConnection conn = new NpgsqlConnection(CONN_STRING);
+        try
+        {
+            conn.Open();
+            NpgsqlCommand cmd = conn.CreateCommand();
+            
+            cmd.CommandText = @"select * from transaction 
+            where id = @id";
+            cmd.Parameters.Add(new NpgsqlParameter("id", NpgsqlTypes.NpgsqlDbType.Integer)
+            {
+                Value = transactionId
+            });
+            NpgsqlDataReader r = cmd.ExecuteReader();
+            while (r.HasRows && r.Read())
+            {
+                invoiceId = r["invoice_id"] as int?;
+                decimal? unitPrice = r["unit_price"] as decimal?;
+                int? qty = r["qty"] as int?;
+                totalPrice += unitPrice * qty;
+                
+            }
+
+            cmd.Parameters.Clear();
+
+
+            cmd.CommandText = @"update invoice 
+                set total_price = @total_price
+            where id = @id";
+
+            cmd.Parameters.Add(new NpgsqlParameter("total_price", NpgsqlTypes.NpgsqlDbType.Money)
+            {
+                Value = totalPrice ?? (object)DBNull.Value
+            });
+            cmd.Parameters.Add(new NpgsqlParameter("id", NpgsqlTypes.NpgsqlDbType.Integer)
+            {
+                Value = invoiceId ?? (object)DBNull.Value
+            });
+
+            cmd.ExecuteNonQuery();
+        
+        }
+        finally
+        {
+            if (conn.State == ConnectionState.Open)
+                conn.Close();
+        }
+    }
 
     public void CreateInvoice()
     {
         TransactionManager tm = new TransactionManager();
         Invoice i = new Invoice();
-        string input;
+        // string input;
         int ask;
         string direct;
         int count = 0;
         bool terminate = false;
-        Console.Write("1- Transaction In.\n2- Transaction Out.\n'-1' cancel.\nPlease Choose transaction direction: ");
-        input = Console.ReadLine();
-        if (input == "-1")
-        {
-            Console.WriteLine("Proccess has been canceled.");
-            return;
-        }
-        if (!int.TryParse(input, out int directionInput))
-        {
-            Console.WriteLine("Invalid Direction, please try again.");
+        int? directionInput = Util.GetInput<int>("1- Transaction In.\n2- Transaction Out.\nChoose transaction Direction: ","-1",(val) => val > 0 && val <= 2);
 
-            return;
-        }
-        else if (directionInput == 1)
+        if (directionInput == 1)
         {
 
             direct = "IN";
@@ -233,32 +273,10 @@ public class InvoiceManager
             int? supplierId = null;
             SupplierManager sM = new SupplierManager();
             sM.PrintSupplierList();
-            Console.Write("Select Supplier ID you want to make transaction with:\n'-1' to cancel: ");
-            input = Console.ReadLine();
+            supplierId = Util.GetInput<int>("Select Supplier ID: ", "-1", (val) => sM.CheckIfIdExists(val));            
 
-            if (input == "-1")
-            {
-                Console.WriteLine("Proccess has been canceled.");
-                return;
-            }
-            else if (!int.TryParse(input, out int sid))
-            {
-                Console.WriteLine("Invalid Supplier ID.");
-                return;
-            }
-            else if (!sM.CheckIfIdExists(sid))
-            {
-                Console.WriteLine("No Supplier found with the specified ID.");
-                return;
-            }
-            else
-                supplierId = sid;
-
-            // Ask user for supplier
-            
             i.SupplierId = supplierId;
             i.Direction = direct;
-            // i.Id = invoiceCode;
             i.InvoiceCode = invoiceCode;
             i.Date = DateTime.Now;
             int? invoiceId = InsertInvoice(i);
@@ -266,9 +284,7 @@ public class InvoiceManager
             do
             {
                 tm.PromptUserForInsert(invoiceId, direct, supplierId, null);
-                count++;
-                Console.WriteLine($"Transaction {count} Done Successfully.");
-                Console.WriteLine("Do you want to make another transaction:\n1- 'YES'\n2- 'NO'");
+                Console.WriteLine("Do you want to do another transaction:\n1- 'YES'\n2- 'NO'");
                 ask = int.Parse(Console.ReadLine());
                 if (ask == 2)
                     terminate = true;
@@ -284,28 +300,10 @@ public class InvoiceManager
             string invoiceCode = GenerateInvoiceCode(direct);
             int? customerId = null;
             CustomerManager cM = new CustomerManager();
+            
             cM.PrintCustomersList();
-            Console.Write("Select Customer ID you want to make transaction with:\n'-1' to cancel: ");
-            input = Console.ReadLine();
-
-            if (input == "-1")
-            {
-                Console.WriteLine("Proccess has been canceled.");
-                return;
-            }
-            else if (!int.TryParse(input, out int cid))
-            {
-                Console.WriteLine("Invalid customer ID.");
-                return;
-            }
-            else if (!cM.CheckIfIdExists(cid))
-            {
-                Console.WriteLine("No Customer found with the specified ID.");
-                return;
-            }
-            else
-                customerId = cid;
-
+            customerId = Util.GetInput<int>("Select Customer ID: ", "-1", (val) => cM.CheckIfIdExists(val));
+           
             i.CustomerId = customerId;
             i.Direction = direct;
             i.InvoiceCode = invoiceCode;
@@ -317,7 +315,7 @@ public class InvoiceManager
             {
                 tm.PromptUserForInsert(invoiceId, direct, null, customerId);
                 count++;
-                Console.WriteLine($"Transaction {count} Done Successfully.");
+
                 Console.WriteLine("Do you want to make another transaction:\n1- 'YES'\n2- 'NO'");
                 ask = int.Parse(Console.ReadLine());
                 if (ask == 2)
