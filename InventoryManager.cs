@@ -5,12 +5,10 @@ public class InventoryManager
 {
     public static int DEFAULT_INVENTORY_ID = 1;
 
-    const string CONN_STRING = "Host=localhost:5432;Username=postgres;Password=2511"; 
-
 
     public long GetAvailableStock(string productId, int? inventoryId = null)
     {
-        NpgsqlConnection conn = new NpgsqlConnection(CONN_STRING);
+        NpgsqlConnection conn = new NpgsqlConnection(Constants.CONN_STRING);
         try
         {
             conn.Open();

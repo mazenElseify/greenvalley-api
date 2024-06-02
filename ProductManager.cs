@@ -17,12 +17,12 @@ using Npgsql.Replication.PgOutput.Messages;
 
 public class ProductManager
 {
-    const string CONN_STRING = "Host=localhost:5432;Username=postgres;Password=2511";
+
 
 
     public string GetProductName(string id)
     {
-        NpgsqlConnection conn = new NpgsqlConnection(CONN_STRING);
+        NpgsqlConnection conn = new NpgsqlConnection(Constants.CONN_STRING);
 
         try
         {
@@ -57,7 +57,7 @@ public class ProductManager
 
     public List<Product> GetAllProducts(int? typeId, string productId = null)
     {
-        NpgsqlConnection connect = new NpgsqlConnection(CONN_STRING);
+        NpgsqlConnection connect = new NpgsqlConnection(Constants.CONN_STRING);
         List<Product> products = new List<Product>();
 
         try
@@ -154,7 +154,7 @@ public class ProductManager
     //functions declation:
     public void PrintTypeList()
     {
-        NpgsqlConnection conn = new NpgsqlConnection(CONN_STRING);
+        NpgsqlConnection conn = new NpgsqlConnection(Constants.CONN_STRING);
 
         try
         {
@@ -190,7 +190,7 @@ public class ProductManager
 
     public bool CheckIfIdExists(string productId)
     {
-        NpgsqlConnection conn = new NpgsqlConnection(CONN_STRING);
+        NpgsqlConnection conn = new NpgsqlConnection(Constants.CONN_STRING);
         try
         {
             conn.Open();
@@ -215,7 +215,7 @@ public class ProductManager
     }
     public bool CheckIfTypeExists(int? pTypeId)
     {
-        NpgsqlConnection conn = new NpgsqlConnection(CONN_STRING);
+        NpgsqlConnection conn = new NpgsqlConnection(Constants.CONN_STRING);
         try
         {
             conn.Open();
@@ -237,7 +237,7 @@ public class ProductManager
 
     public bool CheckIfSubTypeExists(int? subtypeId)
     {
-        NpgsqlConnection conn = new NpgsqlConnection(CONN_STRING);
+        NpgsqlConnection conn = new NpgsqlConnection(Constants.CONN_STRING);
         try
         {
             conn.Open();
@@ -258,7 +258,7 @@ public class ProductManager
     }
     public void PrintSubTypeList(int? TypeId)
     {
-        NpgsqlConnection conn = new NpgsqlConnection(CONN_STRING);
+        NpgsqlConnection conn = new NpgsqlConnection(Constants.CONN_STRING);
 
         try
         {
@@ -295,7 +295,7 @@ public class ProductManager
 
     public string GetTypeName(int? typeId)
     {
-        NpgsqlConnection conn = new NpgsqlConnection(CONN_STRING);
+        NpgsqlConnection conn = new NpgsqlConnection(Constants.CONN_STRING);
 
         try
         {
@@ -323,7 +323,7 @@ public class ProductManager
     }
     public string GetSubTypeName(int? subTypeId)
     {
-        NpgsqlConnection conn = new NpgsqlConnection(CONN_STRING);
+        NpgsqlConnection conn = new NpgsqlConnection(Constants.CONN_STRING);
 
         try
         {
@@ -348,7 +348,7 @@ public class ProductManager
     public int GetProductCount(int? typeId, int? subTypeId)
     {
         int count = 0;
-        NpgsqlConnection conn = new NpgsqlConnection(CONN_STRING);
+        NpgsqlConnection conn = new NpgsqlConnection(Constants.CONN_STRING);
         try
         {
             conn.Open();
@@ -395,7 +395,7 @@ public class ProductManager
 
     public void InsertProduct(Product product)
     {
-        NpgsqlConnection conn = new NpgsqlConnection(CONN_STRING);
+        NpgsqlConnection conn = new NpgsqlConnection(Constants.CONN_STRING);
         try
         {
             conn.Open();
@@ -517,7 +517,7 @@ public class ProductManager
 
     public void UpdateProduct(Product product)
     {
-        NpgsqlConnection conn = new NpgsqlConnection(CONN_STRING);
+        NpgsqlConnection conn = new NpgsqlConnection(Constants.CONN_STRING);
         try
         {
             conn.Open();
@@ -695,7 +695,7 @@ public class ProductManager
     }
     public void DeleteProduct(string id)
     {
-        NpgsqlConnection conn = new NpgsqlConnection(CONN_STRING);
+        NpgsqlConnection conn = new NpgsqlConnection(Constants.CONN_STRING);
         try
         {
             conn.Open();
@@ -770,7 +770,7 @@ public class ProductManager
     }
     public void ListProducts()
     {
-        NpgsqlConnection conn = new NpgsqlConnection(CONN_STRING);
+        NpgsqlConnection conn = new NpgsqlConnection(Constants.CONN_STRING);
         // List<Product> products = new List<Product>();
         try
         {
@@ -950,7 +950,7 @@ public class ProductManager
     }
     public void InsertNewType(string typeName)
     {
-        NpgsqlConnection conn = new NpgsqlConnection(CONN_STRING);
+        NpgsqlConnection conn = new NpgsqlConnection(Constants.CONN_STRING);
         try
         {
             conn.Open();
@@ -996,7 +996,7 @@ public class ProductManager
 
     public void UpdateType(int? typeId)
     {
-        NpgsqlConnection conn = new NpgsqlConnection(CONN_STRING);
+        NpgsqlConnection conn = new NpgsqlConnection(Constants.CONN_STRING);
         try
         {
             conn.Open();
@@ -1048,7 +1048,7 @@ public class ProductManager
     }
     public void DeleteType(int? typeId)
     {
-        NpgsqlConnection conn = new NpgsqlConnection(CONN_STRING);
+        NpgsqlConnection conn = new NpgsqlConnection(Constants.CONN_STRING);
         try
         {
             conn.Open();
@@ -1099,7 +1099,7 @@ public class ProductManager
     }
     public void InsertNewSubType(int? typeId, string subTypeName)
     {
-        NpgsqlConnection conn = new NpgsqlConnection(CONN_STRING);
+        NpgsqlConnection conn = new NpgsqlConnection(Constants.CONN_STRING);
         
 
         try
@@ -1161,7 +1161,7 @@ public class ProductManager
     }
     public void UpdateSubType(string subTypeName, int? id)
     {
-        NpgsqlConnection conn = new NpgsqlConnection(CONN_STRING);
+        NpgsqlConnection conn = new NpgsqlConnection(Constants.CONN_STRING);
         try
         {
             conn.Open();
@@ -1233,7 +1233,7 @@ public class ProductManager
 
     public void DeleteSubType(int subTypeId)
     {
-        NpgsqlConnection conn = new NpgsqlConnection(CONN_STRING);
+        NpgsqlConnection conn = new NpgsqlConnection(Constants.CONN_STRING);
         try
         {
             conn.Open();

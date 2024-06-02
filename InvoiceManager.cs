@@ -4,13 +4,12 @@ using NpgsqlTypes;
 
 public class InvoiceManager 
 {
-   const string CONN_STRING = "Host=localhost:5432;Username=postgres;Password=2511"; 
    public string GenerateInvoiceCode(string direction)
     {
         if (direction == "" || direction == null)
             throw new InvalidOperationException("Invalid direction.");
 
-        NpgsqlConnection conn = new NpgsqlConnection(CONN_STRING);
+        NpgsqlConnection conn = new NpgsqlConnection(Constants.CONN_STRING);
         try
         {
             conn.Open();
@@ -51,7 +50,7 @@ public class InvoiceManager
 
     public Invoice GetInvoiceById(int? invoiceId)
     {
-        NpgsqlConnection conn = new NpgsqlConnection(CONN_STRING);
+        NpgsqlConnection conn = new NpgsqlConnection(Constants.CONN_STRING);
         try
         {
             
@@ -158,7 +157,7 @@ public class InvoiceManager
 
     public int? InsertInvoice(Invoice i)
     {
-        NpgsqlConnection conn = new NpgsqlConnection(CONN_STRING);
+        NpgsqlConnection conn = new NpgsqlConnection(Constants.CONN_STRING);
         try
         {
             conn.Open();
@@ -206,7 +205,7 @@ public class InvoiceManager
     {
         decimal? totalPrice = 0;
         int? invoiceId = null;
-        NpgsqlConnection conn = new NpgsqlConnection(CONN_STRING);
+        NpgsqlConnection conn = new NpgsqlConnection(Constants.CONN_STRING);
         try
         {
             conn.Open();

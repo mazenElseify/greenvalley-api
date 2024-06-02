@@ -4,11 +4,10 @@ using Npgsql;
 
 public class TransactionManager
 {
-    const string CONN_STRING = "Host=localhost:5432;Username=postgres;Password=2511";
     public List<Transaction> GetTransactionsList(string invoiceCode, string direction)
     {
 
-        NpgsqlConnection conn = new NpgsqlConnection(CONN_STRING);
+        NpgsqlConnection conn = new NpgsqlConnection(Constants.CONN_STRING);
         List<Transaction> transactions = new List<Transaction>();
         try
         {
@@ -72,7 +71,7 @@ public class TransactionManager
     }
     public bool CheckIfTransactionExisits(int? transId)
     {
-        NpgsqlConnection conn = new NpgsqlConnection(CONN_STRING);
+        NpgsqlConnection conn = new NpgsqlConnection(Constants.CONN_STRING);
         try
         {
             conn.Open();
@@ -97,7 +96,7 @@ public class TransactionManager
     }
     // public int GetTransactionCount()
     // {
-    //     NpgsqlConnection conn = new NpgsqlConnection(CONN_STRING);
+    //     NpgsqlConnection conn = new NpgsqlConnection(Constants.CONN_STRING);
     //     try
     //     {
     //         conn.Open();
@@ -219,7 +218,7 @@ public class TransactionManager
     public void InsertTransaction(Transaction t)
     {
         // Transaction transaction = new Transaction();
-        NpgsqlConnection conn = new NpgsqlConnection(CONN_STRING);
+        NpgsqlConnection conn = new NpgsqlConnection(Constants.CONN_STRING);
         try
         {
             conn.Open();
@@ -355,7 +354,7 @@ public class TransactionManager
     
     public void UpdateTransaction(Transaction t)
     {
-        NpgsqlConnection conn = new NpgsqlConnection(CONN_STRING);
+        NpgsqlConnection conn = new NpgsqlConnection(Constants.CONN_STRING);
         try
         {
             conn.Open();
@@ -416,7 +415,7 @@ public class TransactionManager
     }
     public void DeleteTransaction(int? id)
     {
-        NpgsqlConnection conn = new NpgsqlConnection(CONN_STRING);
+        NpgsqlConnection conn = new NpgsqlConnection(Constants.CONN_STRING);
         try
         {
             conn.Open();

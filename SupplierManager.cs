@@ -3,10 +3,9 @@ using Npgsql;
 
 public class SupplierManager
 {
-    const string CONN_STRING = "Host=localhost:5432;Username=postgres;password=2511";
     public Supplier GetSupplierById(int? id)
     {
-        NpgsqlConnection conn = new NpgsqlConnection(CONN_STRING);
+        NpgsqlConnection conn = new NpgsqlConnection(Constants.CONN_STRING);
         try
         {
             conn.Open();
@@ -44,7 +43,7 @@ public class SupplierManager
     }
     public List<Supplier> GetSupplierList()
     {
-        NpgsqlConnection conn = new NpgsqlConnection(CONN_STRING);
+        NpgsqlConnection conn = new NpgsqlConnection(Constants.CONN_STRING);
         List<Supplier> suppliers = new List<Supplier>();
         try
         {
@@ -119,7 +118,7 @@ public class SupplierManager
     }
     public void InsertNewSupplier(Supplier supplier)
     {
-        NpgsqlConnection conn = new NpgsqlConnection(CONN_STRING);
+        NpgsqlConnection conn = new NpgsqlConnection(Constants.CONN_STRING);
         try
         {
             conn.Open();
@@ -200,7 +199,7 @@ public class SupplierManager
     }
     public void UpdateSupplier(Supplier supplier)
     {
-        NpgsqlConnection conn = new NpgsqlConnection(CONN_STRING);
+        NpgsqlConnection conn = new NpgsqlConnection(Constants.CONN_STRING);
         try
         {
             conn.Open();
@@ -312,7 +311,7 @@ public class SupplierManager
     }
     public void DeleteSupplier(int? id)
     {
-        NpgsqlConnection conn = new NpgsqlConnection(CONN_STRING);
+        NpgsqlConnection conn = new NpgsqlConnection(Constants.CONN_STRING);
         try
         {
             conn.Open();
@@ -380,7 +379,7 @@ public class SupplierManager
     }
     public bool CheckIfIdExists(int? id)
     {
-        NpgsqlConnection conn = new NpgsqlConnection(CONN_STRING);
+        NpgsqlConnection conn = new NpgsqlConnection(Constants.CONN_STRING);
         try
         {
             conn.Open();
@@ -404,7 +403,7 @@ public class SupplierManager
     }
     // public string GetSupplierName(int? id)
     // {
-    //     NpgsqlConnection conn = new NpgsqlConnection(CONN_STRING);
+    //     NpgsqlConnection conn = new NpgsqlConnection(Constants.CONN_STRING);
     //     try
     //     {
     //         conn.Open();

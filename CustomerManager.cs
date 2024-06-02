@@ -5,11 +5,9 @@ using Npgsql;
 
 public class CustomerManager
 {
-    const string CONN_STRING = "Host=localhost:5432;Username=postgres;password=2511";
-
     public Customer GetCustomerById(int id)
     {
-        NpgsqlConnection conn = new NpgsqlConnection(CONN_STRING);
+        NpgsqlConnection conn = new NpgsqlConnection(Constants.CONN_STRING);
         try
         {
             conn.Open();
@@ -54,7 +52,7 @@ public class CustomerManager
 
     public List<Customer> GetCustomerList()
     {
-        NpgsqlConnection conn = new NpgsqlConnection(CONN_STRING);
+        NpgsqlConnection conn = new NpgsqlConnection(Constants.CONN_STRING);
         List<Customer> customers = new List<Customer>();
         try
         {
@@ -114,7 +112,7 @@ public class CustomerManager
     }
     public void InsertNewCustomer(Customer customer)
     {
-        NpgsqlConnection conn = new NpgsqlConnection(CONN_STRING);
+        NpgsqlConnection conn = new NpgsqlConnection(Constants.CONN_STRING);
 
         try
         {
@@ -220,7 +218,7 @@ public class CustomerManager
     }
     public void UpdateCustomer(Customer customer)
     {
-        NpgsqlConnection conn = new NpgsqlConnection(CONN_STRING);
+        NpgsqlConnection conn = new NpgsqlConnection(Constants.CONN_STRING);
         try
         {
             conn.Open();
@@ -355,7 +353,7 @@ public class CustomerManager
     }
     public void DeleteCustomer(int? Id)
     {
-        NpgsqlConnection conn = new NpgsqlConnection(CONN_STRING);
+        NpgsqlConnection conn = new NpgsqlConnection(Constants.CONN_STRING);
         try
         {
             conn.Open();
@@ -418,7 +416,7 @@ public class CustomerManager
 
     public void PrintTypeList()
     {
-        NpgsqlConnection conn = new NpgsqlConnection(CONN_STRING);
+        NpgsqlConnection conn = new NpgsqlConnection(Constants.CONN_STRING);
 
         try
         {
@@ -456,7 +454,7 @@ public class CustomerManager
 
     public bool CheckIfIdExists(int Id)
     {
-        NpgsqlConnection conn = new NpgsqlConnection(CONN_STRING);
+        NpgsqlConnection conn = new NpgsqlConnection(Constants.CONN_STRING);
         try
         {
             conn.Open();
@@ -475,7 +473,7 @@ public class CustomerManager
     }
     public bool CheckIfTypeExists(int typeId)
     {
-        NpgsqlConnection conn = new NpgsqlConnection(CONN_STRING);
+        NpgsqlConnection conn = new NpgsqlConnection(Constants.CONN_STRING);
         try
         {
             conn.Open();
@@ -500,7 +498,7 @@ public class CustomerManager
 
     public string GetTypeName(int? typeId)
     {
-        NpgsqlConnection conn = new NpgsqlConnection(CONN_STRING);
+        NpgsqlConnection conn = new NpgsqlConnection(Constants.CONN_STRING);
         try
         {
             conn.Open();
@@ -529,7 +527,7 @@ public class CustomerManager
     {
         string input;
         CustomerType cT = new CustomerType();
-        NpgsqlConnection conn = new NpgsqlConnection(CONN_STRING);
+        NpgsqlConnection conn = new NpgsqlConnection(Constants.CONN_STRING);
         try
         {
             Console.WriteLine("Insert new Customer type:");
@@ -565,7 +563,7 @@ public class CustomerManager
     }
     public void UpdateType(CustomerType ct)
     {
-        NpgsqlConnection conn = new NpgsqlConnection(CONN_STRING);
+        NpgsqlConnection conn = new NpgsqlConnection(Constants.CONN_STRING);
         try
         {
             Customer c = new Customer();
@@ -625,7 +623,7 @@ public class CustomerManager
 
     public void DeleteType(int? typeId)
     {
-        NpgsqlConnection conn = new NpgsqlConnection(CONN_STRING);
+        NpgsqlConnection conn = new NpgsqlConnection(Constants.CONN_STRING);
         try
         {
 
